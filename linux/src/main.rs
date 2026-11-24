@@ -6,6 +6,7 @@
 ))]
 
 mod device;
+mod windows;
 
 use std::env;
 use std::ffi::OsStr;
@@ -17,9 +18,11 @@ use std::process::ExitCode;
 
 const USAGE: &str = "Usage:
   rufus-linux list
+  rufus-linux windows-image WINDOWS_ISO OUTPUT_IMG
   rufus-linux write IMAGE DEVICE --erase
 
-Write a raw disk image or a hybrid ISO to an unmounted removable USB disk.
+Prepare Windows UEFI installer media as a disk image, or write an image
+to an unmounted removable USB disk.
 The write command overwrites data on the selected disk.";
 const BUFFER_SIZE: usize = 1024 * 1024;
 
@@ -40,6 +43,9 @@ fn run(args: &[std::ffi::OsString]) -> io::Result<()> {
         [command] if command == "--help" || command == "-h" => {
             println!("{USAGE}");
             Ok(())
+        }
+        [command, iso, output] if command == "windows-image" => {
+            windows::build_image(Path::new(iso), Path::new(output))
         }
         [command, image, disk, flag] if command == "write" && flag == "--erase" => {
             write_image(image, disk)

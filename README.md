@@ -39,7 +39,7 @@ Features
 Linux CLI
 ---------
 
-This fork includes an experimental [Rust CLI for Linux](linux/README.md) that writes raw images and hybrid ISOs to removable USB disks.
+This fork includes an experimental [Rust CLI for Linux](linux/README.md) that writes raw images and hybrid ISOs to removable USB disks and prepares Windows installer media for UEFI.
 
 Compilation
 -----------

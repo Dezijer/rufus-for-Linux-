@@ -1,7 +1,7 @@
 # Rufus Linux CLI
 
 This experimental Rust CLI writes raw disk images and hybrid ISOs to removable
-USB disks. It requires Linux 5.15 or later on x86-64 or AArch64. The build
+USB disks and prepares Windows installer images for UEFI. It requires Linux 5.15 or later on x86-64 or AArch64. The build
 requires Rust 1.85 or later and a system linker. The executable has no Cargo
 dependencies.
 
@@ -28,21 +28,41 @@ and does not test bootability. The raw mode leaves bytes beyond the end of the
 image untouched. Reconnect the USB drive after a successful write so Linux
 rediscovers the partition table.
 
-Use an image whose publisher supports raw USB writing. Filesystem creation and
-ISO extraction, standard Windows installer media, Windows To Go, persistence,
-compressed images, and a graphical interface are outside the scope of this
-initial CLI.
+## Windows installer USB (UEFI)
 
-## Why start with raw writing?
+Install [7-Zip](https://www.7-zip.org/) (`7z` or `7zz`), mtools, and wimlib
+(`wimlib-imagex`; needed for oversized `install.wim`). On Debian 13, these
+are the `7zip`, `mtools`, and `wimtools` packages.
+
+Run the first command as your normal user with an official x64 or ARM64
+Windows ISO. Use a working directory with enough free space for both the
+extracted files and disk image, plus temporary parts when splitting a WIM.
+The output path must be new.
+
+```sh
+linux/target/release/rufus-linux windows-image Windows.iso windows-usb.img
+linux/target/release/rufus-linux list
+sudo linux/target/release/rufus-linux write windows-usb.img /dev/sdX --erase
+```
+
+Use a removable drive with 512-byte logical sectors. The first command builds
+an MBR image with a FAT32 primary partition, copies the installer files and
+splits an oversized `sources/install.wim` into `install*.swm` files so Windows
+Setup can read it from FAT32. It accepts ISO media containing `install.wim`,
+`install.esd`, or a pre-split `install.swm`. Any other individual file above
+the FAT32 limit stops the build. Legacy BIOS and Windows To Go are unsupported.
+The target computer must support the ISO's architecture and bootloader.
+
+[Microsoft's Windows installation USB instructions](https://learn.microsoft.com/en-us/windows-hardware/manufacture/desktop/install-windows-from-a-usb-flash-drive)
+
+## Porting notes
 
 The upstream Rufus maintainer identified the Win32 interface, formatting APIs,
 Windows To Go boot configuration, VHD and ReFS as major porting costs.
-This CLI uses sysfs and Linux block-device operations for device discovery,
-claiming and capacity, without relying on filesystem formatting or Windows APIs.
-A Windows ISO mode would need a separate path to create a partition table and
-filesystem, extract the installer, and handle WIM files that exceed the FAT32
-file size limit. Windows To Go would additionally need to apply the Windows
-image and configure the boot files and BCD store.
+This CLI uses Linux block-device operations and builds Windows installer media
+using the installer ISO's existing bootloader and boot configuration. Windows
+To Go would additionally need to apply the Windows image and configure its
+own boot files and BCD store.
 
 [Upstream FAQ](https://github.com/pbatard/rufus/wiki/FAQ#do-you-plan-to-port-rufus-to-linuxmac-ossome-other-os) ·
 [Maintainer's porting discussion](https://github.com/pbatard/rufus/issues/679#issuecomment-172692258)
@@ -51,4 +71,10 @@ image and configure the boot files and BCD store.
 
 ```sh
 cargo test --manifest-path linux/Cargo.toml --locked
+```
+
+With wimlib installed, run the split-image integration test:
+
+```sh
+cargo test --manifest-path linux/Cargo.toml --locked -- --ignored
 ```
