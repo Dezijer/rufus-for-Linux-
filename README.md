@@ -36,6 +36,11 @@ Features
 * Portable. Secure Boot compatible.
 * 100% [Free Software](https://www.gnu.org/philosophy/free-sw) ([GPL v3](https://www.gnu.org/licenses/gpl-3.0))
 
+Linux CLI
+---------
+
+This fork includes an experimental [Rust CLI for Linux](linux/README.md) that writes raw images and hybrid ISOs to removable USB disks.
+
 Compilation
 -----------
 
